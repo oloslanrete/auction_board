@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper  
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	 
+<mapper namespace="auctionboard">
+	<select id="getCount" resultType="int">
+		select count(*) from jr_auctionlist
+	</select>
+	<insert id="insertAuction" parameterType="auctionboard.AuctionDataBean">
+		INSERT INTO jr_auctionlist(itemnum, startprice,price,title,content,endDate,regDate,writer)
+     		VALUES (#{itemnum},#{startprice},#{price},#{title},#{content},#{endDate},#{regDate},#{writer})
+	</insert>
+	<select id="getItemNum" resultType="int">
+		select jr_item_num.nextVal from dual
+	</select>
+	<insert id="insertImage" parameterType="auctionboard.AuctionImageBean">
+		INSERT INTO JR_IMAGEREF VALUES (JR_IMAGE_ID.NEXTVAL,#{itemnum},#{originalName},#{systemName})
+	</insert>
+	<select id="getAuctions" parameterType="HashMap" resultType="auctionboard.AuctionDataBean">
+		select itemnum, startprice, title, content, enddate,
+				regdate,bidcount,count,writer,price, r
+			from (select itemnum, startprice, title, content, enddate,
+				regdate,bidcount,count,writer,price, rownum r 
+			from (select * from jr_auctionlist order by startprice desc)
+				order by startprice desc)where r &gt;= #{start} and r &lt;=#{end}
+	</select>
+	<select id="getAuction" parameterType="int" resultType="auctionboard.AuctionDataBean">
+		select * from jr_auctionlist where itemnum=#{itemnum}
+	</select>
+	<select id="getImage" parameterType="int" resultType="auctionboard.AuctionImageBean">
+		select * from jr_imageref where itemnum=#{itemnum}
+	</select>
+	
+	<update id="countPlus" parameterType="int">
+		update jr_auctionlist set count=count+1 where itemnum=#{itemnum}
+	</update>
+	<select id="selectbid" parameterType="Map" resultType="int">
+		select count(*) from jr_bidlist where itemnum=#{itemnum} and email=#{email}
+	</select>
+	<insert id="insertbiduser" parameterType="Map">
+		INSERT INTO JR_BIDLIST(bidnum,itemnum,email,bidprice) VALUES (JR_bid_num.NEXTVAL,#{itemnum},#{email},#{bidprice})
+	</insert>
+	<update id="updatebiduser" parameterType="Map">
+		update JR_BIDLIST set bidprice=#{bidprice} where itemnum=#{itemnum} and email=#{email}
+	</update>
+	<update id="bid" parameterType="Map">
+		update jr_auctionlist set startprice=#{bidprice} WHERE itemnum=#{itemnum}
+	</update>
+	<select id="getBid" parameterType="Map" resultType="int">
+		select bidprice from jr_bidlist where itemnum=#{itemnum} and email=#{email} 
+	</select>
+	<select id="thumnail" parameterType="int" resultType="auctionboard.AuctionImageBean">
+		select * from jr_imageref where itemnum=#{itemnum} and image_id=(select Min(image_id) from jr_imageref where itemnum=#{itemnum})
+	</select>
+</mapper>
